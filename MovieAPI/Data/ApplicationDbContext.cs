@@ -1,0 +1,25 @@
+﻿using Microsoft.EntityFrameworkCore;
+using MovieAPI.Models;
+using System.Reflection;
+
+namespace MovieAPI.Data
+{
+    public class ApplicationDbContext : DbContext
+    {
+        public ApplicationDbContext(DbContextOptions options) : base(options)
+        {
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+        }
+        public DbSet<User> Users => Set<User>();
+        public DbSet<Role> Roles => Set<Role>();
+        public DbSet<Movie> Movies => Set<Movie>();
+        public DbSet<Category> Categories => Set<Category>();
+        public DbSet<MovieRating> MoviesRating => Set<MovieRating>();
+    }
+}

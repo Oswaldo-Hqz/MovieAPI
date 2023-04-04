@@ -8,8 +8,8 @@ namespace MovieAPI.Models.Configurations
     {
         public void Configure(EntityTypeBuilder<Category> builder)
         {
-            builder.Property(x => x.Name).HasMaxLength(100);
-            builder.HasIndex(x => x.Name).IsUnique();
+            builder.Property(c => c.Name).HasMaxLength(100);
+            builder.HasIndex(c => c.Name).IsUnique();
         }
     }
 }

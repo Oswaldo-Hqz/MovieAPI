@@ -12,7 +12,7 @@ namespace MovieAPI.Data.Seeds
             {
                 Id = 1,
                 Name = "admin",
-                CreatedDate = DateTime.Now,
+                CreatedDate = DateTime.UtcNow,
                 CreatedUserId = 1,
             };
 
@@ -20,7 +20,7 @@ namespace MovieAPI.Data.Seeds
             {
                 Id = 2,
                 Name = "user",
-                CreatedDate = DateTime.Now,
+                CreatedDate = DateTime.UtcNow,
                 CreatedUserId = 1,
             };
 

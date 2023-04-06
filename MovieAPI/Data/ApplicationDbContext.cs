@@ -19,6 +19,7 @@ namespace MovieAPI.Data
 
             RoleSeeds.Seeds(modelBuilder);
             UserSeeds.Seeds(modelBuilder);
+            MovieCategorySeeds.Seeds(modelBuilder);
         }
 
         public DbSet<User> Users => Set<User>();

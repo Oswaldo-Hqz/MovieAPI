@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +14,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using MovieAPI.Utils;
 
 namespace MovieAPI.Controllers
 {
@@ -40,8 +43,10 @@ namespace MovieAPI.Controllers
                 return BadRequest("Email already exists");
             }
 
+            var passwordUtils = new PasswordUtils();
+
             byte[] PasswordHash, PasswordSalt;
-            CreatePasswordHash(req.Password, out PasswordHash, out PasswordSalt);
+            passwordUtils.CreatePasswordHash(req.Password, out PasswordHash, out PasswordSalt);
 
             User user = new User();
 
@@ -72,7 +77,9 @@ namespace MovieAPI.Controllers
                 return Unauthorized("Invalid email or password");
             }
 
-            if (!VerifyPasswordHash(req.Password, user.PasswordHash, user.PasswordSalt))
+            var passwordUtils = new PasswordUtils();
+
+            if (!passwordUtils.VerifyPasswordHash(req.Password, user.PasswordHash, user.PasswordSalt))
             {
                 return Unauthorized("Invalid email or password");
             }
@@ -80,6 +87,13 @@ namespace MovieAPI.Controllers
             string Token = CreateToken(user);
 
             return Ok(new { Token = Token });
+        }
+
+        [HttpPost("logout"), Authorize]
+        public async Task<ActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return Ok(new { message = "Logout successful" });
         }
 
         //-------
@@ -108,49 +122,5 @@ namespace MovieAPI.Controllers
             return tokenString;
         }
 
-        private void CreatePasswordHash(string password, out byte[] PasswordHash, out byte[] PasswordSalt) 
-        {
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                throw new ArgumentException("Value cannot be null or whitespace.", nameof(password));
-            }
-
-            using (var hmac = new HMACSHA512())
-            {
-                PasswordSalt = hmac.Key;
-                PasswordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-            }
-        }
-
-        public static bool VerifyPasswordHash(string password, byte[] storedHash, byte[] storedSalt)
-        {
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                throw new ArgumentException("Value cannot be null or whitespace.", nameof(password));
-            }
-
-            if (storedHash.Length != 64)
-            {
-                throw new ArgumentException("Invalid length of password hash (64 bytes expected).", nameof(storedHash));
-            }
-
-            if (storedSalt.Length != 128)
-            {
-                throw new ArgumentException("Invalid length of password salt (128 bytes expected).", nameof(storedSalt));
-            }
-
-            using var hmac = new HMACSHA512(storedSalt);
-            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-
-            for (int i = 0; i < computedHash.Length; i++)
-            {
-                if (computedHash[i] != storedHash[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
     }
 }

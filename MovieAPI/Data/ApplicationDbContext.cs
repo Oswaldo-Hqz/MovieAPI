@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MovieAPI.Data.Seeds;
 using MovieAPI.Models;
 using System.Reflection;
 
@@ -15,7 +16,11 @@ namespace MovieAPI.Data
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+            RoleSeeds.Seeds(modelBuilder);
+            UserSeeds.Seeds(modelBuilder);
         }
+
         public DbSet<User> Users => Set<User>();
         public DbSet<Role> Roles => Set<Role>();
         public DbSet<Movie> Movies => Set<Movie>();

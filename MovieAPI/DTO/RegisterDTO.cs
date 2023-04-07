@@ -13,5 +13,6 @@ namespace MovieAPI.DTO
         [Required]
         [DataType(DataType.Password)]
         public string Password { get; set; } = null!;
+        public int RoleId { get; set; }
     }
 }

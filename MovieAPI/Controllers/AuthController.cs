@@ -63,7 +63,28 @@ namespace MovieAPI.Controllers
             _Context.Users.Add(user);
             await _Context.SaveChangesAsync();
 
-            return CreatedAtAction("GetUser", new { id = user.Id }, user);
+            return Ok(new { Status = "Success", Message = "User created successfully!", id = user.Id });
+        }
+
+        [HttpPost("adminRegister"), Authorize(Roles = "admin")]
+        public async Task<ActionResult<User>> adminRegister(RegisterDTO req)
+        {
+            var email = req.Email.ToLower();
+
+            if (await _Context.Users.AnyAsync(u => u.Email == email))
+            {
+                return BadRequest("Email already exists");
+            }
+                        
+            User user = SetUser(req);
+
+            var role = await _Context.Roles.FirstOrDefaultAsync(r => r.Id == req.RoleId);
+            user.Role = role;
+
+            _Context.Users.Add(user);
+            await _Context.SaveChangesAsync();
+
+            return Ok(new { Status = "Success", Message = "User created successfully!", id = user.Id });
         }
 
         [HttpPost("login"), AllowAnonymous]
@@ -77,6 +98,8 @@ namespace MovieAPI.Controllers
                 return Unauthorized("Invalid email or password");
             }
 
+            var role = await _Context.Roles.SingleOrDefaultAsync(r => r.Id == user.RoleId);
+
             var passwordUtils = new PasswordUtils();
 
             if (!passwordUtils.VerifyPasswordHash(req.Password, user.PasswordHash, user.PasswordSalt))
@@ -87,13 +110,6 @@ namespace MovieAPI.Controllers
             string Token = CreateToken(user);
 
             return Ok(new { Token = Token });
-        }
-
-        [HttpPost("logout"), Authorize]
-        public async Task<ActionResult> Logout()
-        {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return Ok(new { message = "Logout successful" });
         }
 
         //-------
@@ -109,7 +125,8 @@ namespace MovieAPI.Controllers
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim(ClaimTypes.Name, user.FirstName + " " + user.LastName),
                     new Claim(ClaimTypes.Role, user.Role.Name),
-                    new Claim(ClaimTypes.Email, user.Email)
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                 }),
                 Expires = DateTime.UtcNow.AddHours(_config.GetValue<int>("Jwt:ExpirationTime")),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha512Signature)
@@ -122,5 +139,23 @@ namespace MovieAPI.Controllers
             return tokenString;
         }
 
+        private User SetUser(RegisterDTO registerDTO)
+        {
+            var passwordUtils = new PasswordUtils();
+
+            byte[] PasswordHash, PasswordSalt;
+            passwordUtils.CreatePasswordHash(registerDTO.Password, out PasswordHash, out PasswordSalt);
+
+            User user = new User();
+
+            user.FirstName = registerDTO.FirstName;
+            user.LastName = registerDTO.LastName;
+            user.Email = registerDTO.Email;
+            user.PasswordHash = PasswordHash;
+            user.PasswordSalt = PasswordSalt;
+            user.CreatedDate = DateTime.UtcNow;
+
+            return user;
+        }
     }
 }

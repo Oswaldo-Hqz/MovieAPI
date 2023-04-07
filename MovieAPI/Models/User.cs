@@ -1,4 +1,6 @@
-﻿namespace MovieAPI.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace MovieAPI.Models
 {
     public class User
     {
@@ -8,7 +10,6 @@
         public string Email { get; set; } = null!;
         public byte[] PasswordHash { get; set; } = null!;
         public byte[] PasswordSalt { get; set; } = null!;
-        public int CreatedUserId { get; set; }
         public DateTime CreatedDate { get; set; }
 
         public int RoleId { get; set; }

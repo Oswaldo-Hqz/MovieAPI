@@ -7,8 +7,8 @@ namespace MovieAPI.Models.Configurations
     {
         public void Configure(EntityTypeBuilder<Movie> builder)
         {
-            builder.Property(x => x.MovieName).HasMaxLength(250);
-            builder.Property(x => x.Synopsis).HasMaxLength(1000);
+            builder.Property(m => m.MovieName).HasMaxLength(250);
+            builder.Property(m => m.Synopsis).HasMaxLength(1000);
         }
     }
 }

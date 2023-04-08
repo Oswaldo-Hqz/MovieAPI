@@ -20,6 +20,7 @@ namespace MovieAPI.Controllers
             _config = config;
         }
 
+        // GET: api/Users
         [HttpGet, Authorize(Roles = "admin")]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
@@ -39,7 +40,6 @@ namespace MovieAPI.Controllers
 
             return user;
         }
-
 
     }
 }

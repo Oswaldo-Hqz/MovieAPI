@@ -1,18 +1,12 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using MovieAPI.Data;
 using MovieAPI.DTO;
 using MovieAPI.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 using MovieAPI.Utils;
 
@@ -31,8 +25,7 @@ namespace MovieAPI.Controllers
             _config = config;
         }
 
-        //public static User user = new User();
-
+        // POST: api/Auth/register
         [HttpPost("register"), AllowAnonymous]
         public async Task<ActionResult<User>> Register(RegisterDTO req)
         {
@@ -43,19 +36,7 @@ namespace MovieAPI.Controllers
                 return BadRequest("Email already exists");
             }
 
-            var passwordUtils = new PasswordUtils();
-
-            byte[] PasswordHash, PasswordSalt;
-            passwordUtils.CreatePasswordHash(req.Password, out PasswordHash, out PasswordSalt);
-
-            User user = new User();
-
-            user.FirstName = req.FirstName;
-            user.LastName = req.LastName;
-            user.Email = req.Email;
-            user.PasswordHash = PasswordHash; 
-            user.PasswordSalt = PasswordSalt;
-            user.CreatedDate = DateTime.UtcNow;
+            User user = SetUser(req);
 
             var role = await _Context.Roles.FirstOrDefaultAsync(r => r.Name == "user");
             user.Role = role;
@@ -66,6 +47,7 @@ namespace MovieAPI.Controllers
             return Ok(new { Status = "Success", Message = "User created successfully!", id = user.Id });
         }
 
+        // POST: api/Auth/adminRegister
         [HttpPost("adminRegister"), Authorize(Roles = "admin")]
         public async Task<ActionResult<User>> adminRegister(RegisterDTO req)
         {
@@ -87,6 +69,7 @@ namespace MovieAPI.Controllers
             return Ok(new { Status = "Success", Message = "User created successfully!", id = user.Id });
         }
 
+        // POST: api/Auth/login
         [HttpPost("login"), AllowAnonymous]
         public async Task<ActionResult> Login(LoginDTO req)
         {

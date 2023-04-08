@@ -27,9 +27,48 @@ namespace MovieAPI.Controllers
         [HttpGet, Authorize(Roles = "admin,user")]
         public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
         {
-            return await _context.Movies.ToListAsync();
+            var movies = await _context.Movies
+                .Select(m => new
+                {
+                    m.Id,
+                    m.MovieName,
+                    m.ReleaseYear,
+                    m.Synopsis,
+                    m.Poster,
+                    Categories = m.Categories.Select(c => new { c.Id, c.Name }).ToList(),
+                    Ratings = (double?)m.MoviesRatings.Average(mr => mr.Rating)
+                }).ToListAsync();
+
+            return Ok(movies);
         }
 
+        // GET: api/Movies/{id}
+        [HttpGet("{id}"), Authorize(Roles = "admin,user")]
+        public async Task<ActionResult<Movie>> GetMovie(int id)
+        {
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            var movie = await _context.Movies
+                .Select(m => new
+                {
+                    m.Id,
+                    m.MovieName,
+                    m.ReleaseYear,
+                    m.Synopsis,
+                    m.Poster,
+                    Categories = m.Categories.Select(c => new { c.Id, c.Name }).ToList(),
+                    Ratings = m.MoviesRatings.Where(mr => mr.UserId == userId).Select(mr => mr.Rating).FirstOrDefault()
+                }).FirstOrDefaultAsync(m => m.Id == id);
+
+            if (movie == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(movie);
+        }
+
+        // GET: api/Movies/FilterMovies
         [HttpGet("FilterMovies"), Authorize(Roles = "admin,user")]
         public async Task<ActionResult<IEnumerable<FilterMoviesDTO>>> FilterMovies(
             [FromQuery] string textSearch = "",
@@ -89,20 +128,7 @@ namespace MovieAPI.Controllers
             return Ok(result);
         }
 
-        // GET: api/Movies/5
-        [HttpGet("{id}"), Authorize(Roles = "admin,user")]
-        public async Task<ActionResult<Movie>> GetMovie(int id)
-        {
-            var movie = await _context.Movies.FindAsync(id);
-
-            if (movie == null)
-            {
-                return NotFound();
-            }
-
-            return movie;
-        }
-
+        // POST: api/Movies/createMovie
         [HttpPost("CreateMovie"), Authorize(Roles = "admin")]
         public async Task<ActionResult> CreateMovie(MovieDTO req)
         {
@@ -139,6 +165,7 @@ namespace MovieAPI.Controllers
             return CreatedAtAction("GetMovie", new { id = movie.Id }, movie);
         }
 
+        // POST: api/Movies/AddMoviePoster
         [HttpPost("AddMoviePoster"), Authorize(Roles = "admin")]
         public async Task<ActionResult> AddMoviePoster([FromForm] MoviePosterDTO req)
         {
@@ -168,6 +195,7 @@ namespace MovieAPI.Controllers
             return Ok(movie);
         }
 
+        // POST: api/Movies/UpdateMovie/{id}
         [HttpPut("UpdateMovie/{id}"), Authorize(Roles = "admin")]
         public async Task<ActionResult> UpdateMovie(int id, MovieDTO req)
         {
@@ -200,7 +228,7 @@ namespace MovieAPI.Controllers
             return NoContent();
         }
 
-        // DELETE: api/Movies/5
+        // DELETE: api/Movies/{id}
         [HttpDelete("{id}"), Authorize(Roles = "admin")]
         public async Task<IActionResult> DeleteMovie(int id)
         {
